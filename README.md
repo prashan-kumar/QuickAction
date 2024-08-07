@@ -1,4 +1,4 @@
-# chrome extension
+#Crome Extension Project
 
 -----
 
