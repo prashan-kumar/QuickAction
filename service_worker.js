@@ -1,180 +1,185 @@
-let sec=25*60;
-let timerIsRunning=false;
+let sec = 25 * 60;
+let timerIsRunning = false;
+let activeTabId = null;
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  //  console.log(++sec);
-  if(!timerIsRunning){
-     return;
-  }
-   sec--;
-   const minLeft=Math.floor(sec/60)+"M";
+// Listen for tab changes
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  if (timerIsRunning && activeTabId !== null && activeTabId !== activeInfo.tabId) {
+    // Pause timer when switching to a different tab
+    timerIsRunning = false;
     chrome.action.setBadgeText(
       {
-               text: minLeft,
+        text: "Pause",
       },
-    ()=>{}
+      () => {}
     );
-   if(sec<=0){
-    clearAlarm('pomodoro-timer');
-    createNotification("well Done you focused well, Take a break");
-    chrome.contextMenus.update("start-timer",
-      { title: "start Timer",
-       contexts: ["all"],
-      
-      });
+    chrome.action.setBadgeBackgroundColor(
+      {
+        color: "pink",
+      },
+      () => {}
+    );
+    createNotification("Timer paused - switched to different tab");
+  }
+  activeTabId = activeInfo.tabId;
+});
 
-      chrome.action.setBadgeText(
-        {
-                 text: "-",
-        },
-      ()=>{}
-      );
-
-      
-chrome.action.setBadgeBackgroundColor({
-  color:"yellow"
-},
-()=>{}
-);
-
-
-   }
-}); 
-
-
-function createAlarm(name){
-  chrome.alarms.create(
-    name, 
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (!timerIsRunning) {
+    return;
+  }
+  sec--;
+  const minLeft = Math.floor(sec / 60) + "M";
+  chrome.action.setBadgeText(
     {
-      periodInMinutes: 1/60,
+      text: minLeft,
+    },
+    () => {}
+  );
+  if (sec <= 0) {
+    clearAlarm('pomodoro-timer');
+    createNotification("Well Done you focused well, Take a break");
+    chrome.contextMenus.update("start-timer",
+      {
+        title: "Start Timer",
+        contexts: ["all"],
+      });
+    chrome.action.setBadgeText(
+      {
+        text: "-",
+      },
+      () => {}
+    );
+
+    chrome.action.setBadgeBackgroundColor({
+      color: "yellow"
+    },
+      () => {}
+    );
+  }
+});
+
+function createAlarm(name) {
+  chrome.alarms.create(
+    name,
+    {
+      periodInMinutes: 1 / 60,
     }
-    // (alarm)=>{
-    //  console.log(alarm);
-    // }
   );
 }
 
-function clearAlarm(name){
+function clearAlarm(name) {
   chrome.alarms.clear(
     name,
-    (wascleared)=> {console.log(wascleared);
-    });
+    (wascleared) => { console.log(wascleared); }
+  );
 }
 
-function createNotification(message){
-  const opt={
-    type : "list",
-    title :"QuickAction",
+function createNotification(message) {
+  const opt = {
+    type: "list",
+    title: "QuickAction",
     message,
-    items: [{title: "QuickAction",message:message}],
-    iconUrl:"icons/clock-48.png",
+    items: [{ title: "QuickAction", message: message }],
+    iconUrl: "icons/clock-48.png",
   };
-
-  chrome.notifications.create(null,opt);
+  chrome.notifications.create(null, opt);
 }
 
 chrome.contextMenus.create({
-  id : "start-timer",
-  title : "Start Timer",
-  contexts : ["all"]
+  id: "start-timer",
+  title: "Start Timer",
+  contexts: ["all"]
 });
-
 
 chrome.contextMenus.create({
-  id : "reset-timer",
-  title : "Reset Timer",
-  contexts : ["all"]
+  id: "reset-timer",
+  title: "Reset Timer",
+  contexts: ["all"]
 });
 
-chrome.contextMenus.onClicked.addListener(function(info,tab) {
-    switch(info.menuItemId){
-      case "reset-timer":
-         chrome.contextMenus.update("start-timer",
-          { title: "start Timer",
-           contexts: ["all"],
-          });
-        chrome.action.setBadgeText(
-          {
-                   text: "R",
-          },
-        ()=>{}
-        );
-        
-        clearAlarm("pomodoro-timer");
-        chrome.action.setBadgeBackgroundColor({
-        color:"blue"
-       },
-      ()=>{}
-      );
-        
-        createNotification("your Timer has been reset");
-        // chrome.contextMenus.update("start-timer",
-        //   { title: "start Timer",
-        //    contexts: ["all"],
-        //   });
-        timerIsRunning=false;
-        sec=0;
-       break;
-
-      case "start-timer":
-       if(timerIsRunning){
-        // clearAlarm("Pomodoro-Timer");
-
-        chrome.action.setBadgeText(
-          {
-                   text: "S",
-          },
-        ()=>{}
-        );
-        
-        
-        chrome.action.setBadgeBackgroundColor({
-        color:"green"
-       },
-      ()=>{}
+chrome.contextMenus.onClicked.addListener(function (info, tab) {
+  switch (info.menuItemId) {
+    case "reset-timer":
+      chrome.contextMenus.update("start-timer",
+        {
+          title: "Start Timer",
+          contexts: ["all"],
+        });
+      chrome.action.setBadgeText(
+        {
+          text: "R",
+        },
+        () => {}
       );
 
-        createNotification("your Timer has  stopped");
+      clearAlarm("pomodoro-timer");
+      chrome.action.setBadgeBackgroundColor({
+        color: "blue"
+      },
+        () => {}
+      );
+
+      createNotification("Your Timer has been reset");
+      timerIsRunning = false;
+      sec = 0;
+      activeTabId = null;
+      break;
+
+    case "start-timer":
+      if (timerIsRunning) {
+        chrome.action.setBadgeText(
+          {
+            text: "S",
+          },
+          () => {}
+        );
+
+        chrome.action.setBadgeBackgroundColor({
+          color: "green"
+        },
+          () => {}
+        );
+        createNotification("Your Timer has stopped");
         chrome.contextMenus.update("start-timer",
-          { title: "start Timer",
-           contexts: ["all"],
+          {
+            title: "Start Timer",
+            contexts: ["all"],
           });
-        timerIsRunning=false;
+        timerIsRunning = false;
+        activeTabId = null;
         return;
-       }
-       sec=sec<=0? 25*60:sec; 
-      createNotification("your Timer has started");
-      timerIsRunning=true;
+      }
+      sec = sec <= 0 ? 25 * 60 : sec;
+      createNotification("Your Timer has started");
+      timerIsRunning = true;
+      // Store the current tab ID when starting the timer
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        if (tabs[0]) {
+          activeTabId = tabs[0].id;
+        }
+      });
       createAlarm("pomodoro-timer");
       chrome.action.setBadgeBackgroundColor({
-        color:"orange"
+        color: "orange"
       },
-      ()=>{}
+        () => {}
       );
       chrome.contextMenus.update("start-timer",
-       { title: "stop Timer",
-        contexts: ["all"],}
+        {
+          title: "Stop Timer",
+          contexts: ["all"],
+        }
       );
       break;
 
-      default:
-        break;
-    }
+    default:
+      break;
+  }
 });
 
-
-// chrome.runtime.onInstalled.addListener(function(details){
-//   if(details.reason=="install"){
-//     chrome.action.setBadgeBackgorundColor({
-//       color:"orange"
-//     },
-//     ()=>{}
-//   );
-//   }
-// });
-
 chrome.action.setBadgeBackgroundColor({
-  color:"orange"
+  color: "orange"
 },
-()=>{}
+  () => {}
 );

@@ -18,7 +18,7 @@
       "128": "icons/clock-128.png"
     }
   },
-    "permissions": ["storage","contextMenus","alarms","notifications"],
+    "permissions": ["storage","contextMenus","alarms","notifications","tabs"],
     "background":{
       "service_worker": "service_worker.js"
     }
