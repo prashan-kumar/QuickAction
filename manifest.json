@@ -16,8 +16,12 @@
       "32": "icons/clock-32.png",
       "48": "icons/clock-48.png",
       "128": "icons/clock-128.png"
-    },
-    "permissions": ["storage"]
-  }
+    }
+  },
+    "permissions": ["storage","contextMenus","alarms","notifications"],
+    "background":{
+      "service_worker": "service_worker.js"
+    }
+  
 
 }
